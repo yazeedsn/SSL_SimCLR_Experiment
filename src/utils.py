@@ -13,7 +13,7 @@ def plot_metrics(
 ):
     """
     metrics:
-        Dictionary of lists with keys:
+        List of dictionaries with keys:
         {
             "values": ...,
             "title": ...,

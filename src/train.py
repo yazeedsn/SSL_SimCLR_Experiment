@@ -104,9 +104,6 @@ def train_linear_probe(
     Returns:
         A ``(loss_history, accuracy_history)`` tuple, each a list of per-epoch averages.
     """
-    for name, param in model.named_parameters():
-        param.requires_grad = name.startswith("fc")
-
     trainable = [p for p in model.parameters() if p.requires_grad]
     optimizer = optimizer_factory(trainable)
     
