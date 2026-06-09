@@ -146,8 +146,7 @@ def train_ssl(
         model:         Encoder network to train.
         train_dl:      DataLoader yielding ``(inputs, _)`` batches.
         optimizer:     An optimizer configured for ``model``'s parameters.
-        augmentation:  A stochastic transform applied to a device-resident
-                       tensor, returning a tensor on the same device.
+        augmentation:  A stochastic transform applied to a tensor, returning a tensor.
         loss_fn:       Contrastive loss with signature
                        ``(z1, z2, temperature=...) -> scalar``.
         device:        Device string, e.g. ``"cuda"`` or ``"cpu"``.
