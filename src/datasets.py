@@ -23,5 +23,5 @@ def get_eval_ds():
         DATASET_PATH, 
         split="test", 
         download=True, 
-        transform=transforms.get_normalization_transform()
+        transform=transforms.get_to_tensor_normalized_transform()
     )
