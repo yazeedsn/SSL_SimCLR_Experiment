@@ -3,7 +3,7 @@ from torchvision.models import resnet18, ResNet18_Weights
 
 class SimCLR(nn.Module):
     def __init__(self):
-        super.__init__()
+        super().__init__()
         backbone = resnet18(weights=ResNet18_Weights.DEFAULT)
         self.encoder = nn.Sequential(*list(backbone.children())[:-1])
         self.projection_head = nn.Sequential(
