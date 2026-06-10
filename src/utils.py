@@ -1,60 +1,62 @@
 import torch 
 import math
-from pathlib import Path
+
 import matplotlib.pyplot as plt
+from torch import Tensor
+from pathlib import Path
 
-# Plotting Utilities
-def plot_metrics(
-    metrics,
-    epochs=None,
-    figsize=(12, 5),
-    save_path=None,
-    show=True,
-):
-    """
-    metrics:
-        List of dictionaries with keys:
-        {
-            "values": ...,
-            "title": ...,
-            "ylabel": ...
-        }
-    """
+def _tensor_to_numpy(img: Tensor):
+    img = img.detach().cpu()
+    if img.ndim == 3 and img.shape[0] in (1, 3):
+        img = img.permute(1, 2, 0)
+    if img.ndim == 3 and img.shape[-1] == 1:
+        img = img.squeeze(-1)
+    return img.numpy()
 
-    n_metrics = len(metrics)
-    if epochs is None:
-        epochs = range(1, len(metrics[0]["values"]) + 1)
+def _save_figure(fig: plt.Figure, save_path: Path) -> None:
+    save_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(save_path, dpi=300, bbox_inches="tight")
 
-    fig, axes = plt.subplots(1, n_metrics, figsize=figsize)
-    if n_metrics == 1:
-        axes = [axes]
 
-    for ax, metric in zip(axes, metrics):
-        ax.plot(epochs, metric["values"], marker="o")
-        ax.set_title(metric["title"])
-        ax.set_xlabel("Epoch")
-        ax.set_ylabel(metric["ylabel"])
-        ax.grid(True)
+def plot_metric(
+        yvalues: list[float],
+        xvalues: list[float] | None,
+        title: str | None,
+        ylabel: str | None,
+        xlabel: str | None,
+        figsize: tuple[int, int] = (6, 4),
+        save_path: Path | None = None,
+        show: bool = True,
+) -> None:
+    if not xvalues:
+        xvalues = range(1, len(yvalues) + 1)
 
+    fig, ax = plt.subplots(figsize=figsize)
+    ax.plot(xvalues, yvalues, marker="o")
+    if title: ax.set_title(title)
+    if xlabel: ax.set_xlabel(xlabel)
+    if ylabel: ax.set_ylabel(ylabel)
+    ax.grid(True)
     fig.tight_layout()
 
     if save_path is not None:
-        save_path = Path(save_path)
-        save_path.parent.mkdir(parents=True, exist_ok=True)
-        fig.savefig(save_path, dpi=300, bbox_inches="tight")
-
-    if show: plt.show() 
-    else: plt.close(fig)
-
+        _save_figure(fig, Path(save_path))
+        
+    if show:
+        plt.show()
+    else:
+        plt.close(fig)
 
 def plot_image_grid(
-    images,
-    labels=None,
-    n=10,
-    cols=5,
-    transform=None,
-    figsize=None,
-):
+        images,
+        labels: list | None = None,
+        n: int = 10,
+        cols: int = 5,
+        transform=None,
+        figsize: tuple[int, int] | None = None,
+        save_path: Path | None = None,
+        show: bool = True,
+    ) -> None:
     n = min(n, len(images))
     rows = math.ceil(n / cols)
     if figsize is None:
@@ -69,18 +71,21 @@ def plot_image_grid(
         img = images[i]
         if transform is not None:
             img = transform(img)
-        if isinstance(img, torch.Tensor):
-            img = img.detach().cpu()
-            if img.ndim == 3 and img.shape[0] in (1, 3):
-                img = img.permute(1, 2, 0)
-            if img.ndim == 3 and img.shape[-1] == 1:
-                img = img.squeeze(-1)
+        if isinstance(img, Tensor):
+            img = _tensor_to_numpy(img)
         axes[i].imshow(img)
         if labels is not None:
             axes[i].set_title(str(labels[i]))
 
     fig.tight_layout()
-    plt.show()
+
+    if save_path is not None:
+        _save_figure(fig, Path(save_path))
+
+    if show:
+        plt.show()
+    else:
+        plt.close(fig)
 
 # Saving/Loading Utilities 
 def save_checkpoint(model, optimizer, epoch, loss, path="outputs/checkpoints/checkpoint.pt"):
