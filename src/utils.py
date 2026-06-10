@@ -20,10 +20,10 @@ def _save_figure(fig: plt.Figure, save_path: Path) -> None:
 
 def plot_metric(
         yvalues: list[float],
-        xvalues: list[float] | None,
-        title: str | None,
-        ylabel: str | None,
-        xlabel: str | None,
+        xvalues: list[float] | None = None,
+        title: str | None = None,
+        ylabel: str | None = None,
+        xlabel: str | None = None,
         figsize: tuple[int, int] = (6, 4),
         save_path: Path | None = None,
         show: bool = True,
@@ -41,7 +41,7 @@ def plot_metric(
 
     if save_path is not None:
         _save_figure(fig, Path(save_path))
-        
+
     if show:
         plt.show()
     else:
