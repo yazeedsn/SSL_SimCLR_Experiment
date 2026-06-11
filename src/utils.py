@@ -1,5 +1,6 @@
 import torch 
 import math
+from config import OUTPUT_DIR 
 
 import matplotlib.pyplot as plt
 from torch import Tensor
@@ -88,21 +89,15 @@ def plot_image_grid(
         plt.close(fig)
 
 # Saving/Loading Utilities 
-def save_checkpoint(model, optimizer, epoch, loss, path="outputs/checkpoints/checkpoint.pt"):
-    checkpoint = {
-        "epoch": epoch,
-        "model_state_dict": model.state_dict(),
-        "optimizer_state_dict": optimizer.state_dict(),
-        "loss": loss,
-    }
-
-    torch.save(checkpoint, path)
+def save_model(model, name):
+    output_path = Path(OUTPUT_DIR)
+    output_path.mkdir(parents=True, exist_ok=True)
+    file_path = output_path / f'{name}_weights.pth'
+    torch.save(model.state_dict(), file_path)
 
 
-def load_checkpoint(model, optimizer, path="outputs/checkpoints/checkpoint.pt", device="cpu"):
-    checkpoint = torch.load(path, map_location=device)
-    model.load_state_dict(checkpoint["model_state_dict"])
-    optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
-    epoch = checkpoint["epoch"]
-    loss = checkpoint["loss"]
-    return model, optimizer, epoch, loss
+def load_model(model, name, device="cpu"):
+    path = Path(OUTPUT_DIR) / f'{name}_weights.pth'
+    state_dict = torch.load(path, weights_only=True, map_location=device)
+    model.load_state_dict(state_dict)
+    return model
