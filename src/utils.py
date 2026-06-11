@@ -1,6 +1,6 @@
 import torch 
 import math
-from config import OUTPUT_DIR 
+from .config import OUTPUT_DIR 
 
 import matplotlib.pyplot as plt
 from torch import Tensor
