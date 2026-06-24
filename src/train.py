@@ -1,11 +1,12 @@
 from collections.abc import Callable
 
+import torch
 from tqdm import tqdm
 from torch import Tensor
 from torch.nn import Module, Parameter
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
-
+from .config import CHECKPOINTS_DIR
 
 def _run_epoch_linear_probe(
         model: Module,
@@ -71,7 +72,7 @@ def _run_epoch_ssl(
 
         running_loss += loss.item()
         pbar.set_description(
-            f"Epoch [{epoch + 1}/{n_epochs}] Loss: {running_loss / (batch_idx + 1):.4f}"
+            f"Epoch [{epoch}/{n_epochs}] Loss: {running_loss / (batch_idx + 1):.4f}"
         )
 
     return running_loss / len(train_dl)
@@ -87,8 +88,7 @@ def train_linear_probe(
 ) -> tuple[list[float], list[float]]:
     """Train only the final fully-connected layer(s) of `model` (linear probing).
 
-    Freezes all parameters whose names do not start with "fc", then trains
-    for `n_epochs` epochs. The optimizer should already reference only the
+    The optimizer should already reference only the
     unfrozen parameters, or be rebuilt after calling this function.
 
     Takes an optimizer factory to build an optimizer according to the unfreezed parameters, e.g. lambda p: Adam(p, lr=1e-3).
@@ -132,6 +132,8 @@ def train_ssl(
         device: str,
         n_epochs: int,
         temperature: float = 0.1,
+        resume_from_checkpoint: str | None = None,
+        checkpoint_every: int | None = None
 ) -> list[float]:
     """Train a model with a self-supervised contrastive objective.
 
@@ -149,20 +151,45 @@ def train_ssl(
         device:        Device string, e.g. ``"cuda"`` or ``"cpu"``.
         n_epochs:      Number of training epochs.
         temperature:   Temperature scalar forwarded to ``loss_fn``.
+        resume_from_checkpoint:
+            Path to a checkpoint file used to resume training. If provided,
+            the model, optimizer, epoch, and loss history are restored from it.
+        checkpoint_every:
+            Save a checkpoint every `checkpoint_every` epochs. If `None`,
+            intermediate checkpoints are not saved.
 
     Returns:
         A list of average losses, one per epoch.
     """
+    loss_hist: list[float] = []
+    epoch = 1
+    if resume_from_checkpoint:
+        cp = torch.load(resume_from_checkpoint, map_location=device)
+        epoch = cp['epoch'] + 1
+        model.load_state_dict(cp['model_state_dict'])
+        optimizer.load_state_dict(cp['optimizer_state_dict'])
+        loss_hist = cp['loss_history']
+    
+    
+    
     model.train()
 
-    loss_hist: list[float] = []
-
-    for epoch in range(n_epochs):
+    for epoch in range(epoch, n_epochs + 1):
         avg_loss = _run_epoch_ssl(
             model, train_dl, optimizer, augmentation, loss_fn,
             device, epoch, n_epochs, temperature,
         )
         loss_hist.append(avg_loss)
-        print(f"\nEpoch {epoch + 1} completed — Avg Loss: {avg_loss:.4f}\n")
+        print(f"\nEpoch {epoch} completed — Avg Loss: {avg_loss:.4f}\n")
+        if checkpoint_every is not None and epoch % checkpoint_every == 0:
+            torch.save({
+                "epoch": epoch,
+                "model_state_dict": model.state_dict(),
+                "optimizer_state_dict": optimizer.state_dict(),
+                "loss_history": loss_hist,
+            },
+            CHECKPOINTS_DIR / f'sim_clr_cp_epoch_{epoch:03d}.pt'
+            )
+            print(f'Checkpoint saved for epoch {epoch}')
 
     return loss_hist
