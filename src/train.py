@@ -1,3 +1,5 @@
+import os 
+from pathlib import Path
 from collections.abc import Callable
 
 import torch
@@ -6,7 +8,6 @@ from torch import Tensor
 from torch.nn import Module, Parameter
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
-from .config import CHECKPOINTS_DIR
 
 def _run_epoch_linear_probe(
         model: Module,
@@ -170,8 +171,9 @@ def train_ssl(
         optimizer.load_state_dict(cp['optimizer_state_dict'])
         loss_hist = cp['loss_history']
     
-    
-    
+    checkpoints_dir =  Path('outputs/checkpoints')
+    if checkpoint_every:
+        os.makedirs(checkpoints_dir, exist_ok=True)
     model.train()
 
     for epoch in range(epoch, n_epochs + 1):
@@ -188,7 +190,7 @@ def train_ssl(
                 "optimizer_state_dict": optimizer.state_dict(),
                 "loss_history": loss_hist,
             },
-            CHECKPOINTS_DIR / f'sim_clr_cp_epoch_{epoch:03d}.pt'
+            checkpoints_dir / f'sim_clr_cp_epoch_{epoch:03d}.pt'
             )
             print(f'Checkpoint saved for epoch {epoch}')
 
