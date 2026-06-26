@@ -169,6 +169,10 @@ def train_ssl(
         epoch = cp['epoch'] + 1
         model.load_state_dict(cp['model_state_dict'])
         optimizer.load_state_dict(cp['optimizer_state_dict'])
+        for state in optimizer.state.values():
+            for k, v in state.items():
+                if torch.is_tensor(v):
+                    state[k] = v.to(device)
         loss_hist = cp['loss_history']
     
     checkpoints_dir =  Path('outputs/checkpoints')
@@ -190,7 +194,7 @@ def train_ssl(
                 "optimizer_state_dict": optimizer.state_dict(),
                 "loss_history": loss_hist,
             },
-            checkpoints_dir / f'sim_clr_cp_epoch_{epoch:03d}.pt'
+                checkpoints_dir / f'sim_clr_cp_epoch_{epoch:03d}.pt'
             )
             print(f'Checkpoint saved for epoch {epoch}')
 
