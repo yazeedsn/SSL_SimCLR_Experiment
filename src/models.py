@@ -15,18 +15,3 @@ class SimCLR(nn.Module):
     def forward(self, x: Tensor) -> Tensor:
         x = self.encoder(x).flatten(1)
         return self.projection_head(x)
-    
-    def get_linear_prob(self, n_classes: int) -> nn.Module:
-        return nn.Sequential(
-            self.encoder,
-            nn.Flatten(),
-            nn.Linear(512, n_classes),
-        )
-
-    def freeze_encoder(self):
-        for p in self.encoder.parameters():
-            p.requires_grad = False
-
-    def unfreeze_encoder(self):
-        for p in self.encoder.parameters():
-            p.requires_grad = True

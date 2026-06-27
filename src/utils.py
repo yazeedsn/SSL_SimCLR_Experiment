@@ -1,7 +1,7 @@
 import torch 
 import math
 from .config import OUTPUT_DIR 
-
+from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 from torch import Tensor
 from pathlib import Path
@@ -14,14 +14,14 @@ def _tensor_to_numpy(img: Tensor):
         img = img.squeeze(-1)
     return img.numpy()
 
-def _save_figure(fig: plt.Figure, save_path: Path) -> None:
+def _save_figure(fig: Figure, save_path: Path) -> None:
     save_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(save_path, dpi=300, bbox_inches="tight")
 
 
 def plot_metric(
         yvalues: list[float],
-        xvalues: list[float] | None = None,
+        xvalues: list[float] | range | None = None,
         title: str | None = None,
         ylabel: str | None = None,
         xlabel: str | None = None,
@@ -61,7 +61,7 @@ def plot_image_grid(
     n = min(n, len(images))
     rows = math.ceil(n / cols)
     if figsize is None:
-        figsize = (cols * 2.5, rows * 2.5)
+        figsize = (int(cols * 2.5), int(rows * 2.5))
 
     fig, axes = plt.subplots(rows, cols, figsize=figsize)
     axes = axes.flatten() if n > 1 else [axes]

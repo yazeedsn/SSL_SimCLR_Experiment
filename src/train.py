@@ -6,6 +6,7 @@ import torch
 from tqdm import tqdm
 from torch import Tensor
 from torch.nn import Module, Parameter
+from torch.optim.lr_scheduler import LRScheduler
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 
@@ -38,7 +39,6 @@ def _run_epoch_linear_probe(
 
         pbar.set_description(f"Epoch [{epoch + 1}/{n_epochs}] Batch [{batch_idx + 1}/{len(train_dl)}]")
         pbar.set_postfix(Loss=f"{loss.item():.4f}")
-
     avg_loss = running_loss / len(train_dl)
     avg_acc = true_predictions / total
     return avg_loss, avg_acc
@@ -133,6 +133,7 @@ def train_ssl(
         device: str,
         n_epochs: int,
         temperature: float = 0.1,
+        scheduler: LRScheduler | None = None,
         resume_from_checkpoint: str | None = None,
         checkpoint_every: int | None = None
 ) -> list[float]:
@@ -174,6 +175,8 @@ def train_ssl(
                 if torch.is_tensor(v):
                     state[k] = v.to(device)
         loss_hist = cp['loss_history']
+        if scheduler and 'scheduler_state_dict' in cp.keys():
+            scheduler = scheduler.load_state_dict(cp['scheduler_state_dict'])
     
     checkpoints_dir =  Path('outputs/checkpoints')
     if checkpoint_every:
@@ -187,12 +190,15 @@ def train_ssl(
         )
         loss_hist.append(avg_loss)
         print(f"\nEpoch {epoch} completed — Avg Loss: {avg_loss:.4f}\n")
+        if scheduler:
+            scheduler.step(epoch)
         if checkpoint_every is not None and epoch % checkpoint_every == 0:
             torch.save({
                 "epoch": epoch,
                 "model_state_dict": model.state_dict(),
                 "optimizer_state_dict": optimizer.state_dict(),
                 "loss_history": loss_hist,
+                "scheduler": scheduler.state_dict() if scheduler else None,
             },
                 checkpoints_dir / f'sim_clr_cp_epoch_{epoch:03d}.pt'
             )
