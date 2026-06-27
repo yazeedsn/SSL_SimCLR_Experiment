@@ -21,11 +21,11 @@ def get_to_tensor_normalized_transform() -> v2.Compose:
 
 def get_random_augmentation_transform() -> nn.Sequential:
     return nn.Sequential(
-        v2.RandomResizedCrop(96, scale=(0.5, 1)),
+        v2.RandomResizedCrop(96),
         v2.RandomHorizontalFlip(),
-        v2.RandomApply([v2.ColorJitter(0.2, 0.2, 0.2, 0.1)]),
+        v2.RandomApply([v2.ColorJitter(0.5, 0.5, 0.5, 0.1)], p=0.8),
         v2.RandomGrayscale(0.2),
-        v2.RandomApply([v2.GaussianBlur(3)]),
+        v2.RandomApply([v2.GaussianBlur(9)]),
     )
 
 def get_random_augmentation_normalized_transform() -> nn.Sequential:
